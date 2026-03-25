@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ESP Web Flasher — Local Flash Platform</title>
+  <meta name="description" content="Browser-based firmware flashing platform for ESP32 and ESP8266 devices." />
+  <link rel="stylesheet" href="style.css?v=3" />
+
+  <!-- esptool-js is imported as a module in app.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+
+<body>
+
+  <!-- Toast notifications -->
+  <div id="toast-container"></div>
+
+  <div class="container">
+
+
+    <!-- ══ Stepper ══ -->
+    <div class="stepper-container">
+      <div class="stepper">
+        <div class="step active" id="step-idx-1">
+          <div class="step-circle">1</div>
+          <div class="step-label">
+            <span class="step-num">STEP 1</span>
+            <span class="step-text">Firmware</span>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step" id="step-idx-2">
+          <div class="step-circle">2</div>
+          <div class="step-label">
+            <span class="step-num">STEP 2</span>
+            <span class="step-text">Connect</span>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step" id="step-idx-3">
+          <div class="step-circle">3</div>
+          <div class="step-label">
+            <span class="step-num">STEP 3</span>
+            <span class="step-text">Flash</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Browser Incompatibility Warning ══ -->
+    <div id="webserial-warning" class="alert-banner" style="display:none">
+      <span>⚠️ <strong>Web Serial not supported!</strong> Please use Chrome or Edge 89+.</span>
+    </div>
+
+    <!-- ══ Main Content ══ -->
+    <main class="main-content">
+
+      <!-- Step 1: Select Firmware -->
+      <section id="section-step-1" class="step-section active">
+        <div class="card main-step-card">
+          <div class="step-card-body">
+            <div class="config-item wide">
+              <label>SELECT FIRMWARE</label>
+              <div class="select-wrapper">
+                <select id="project-select" onchange="selectProject(this.value)">
+                  <option value="" disabled selected>— Choose a firmware —</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="step-card-footer">
+            <div class="footer-status-text" id="step-1-status">Select a firmware to continue</div>
+            <button class="btn btn-primary" id="btn-step-1-next" onclick="goToStep(2)" disabled>Next →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 2: Connect Device -->
+      <section id="section-step-2" class="step-section">
+        <div class="card main-step-card">
+          <div class="step-card-body centered">
+            <div class="compact-grid">
+              <div class="card-icon large">🔌</div>
+              <div class="compact-item-group" style="text-align: left;">
+                <h2 class="step-heading" style="margin-bottom: 2px;">Connect Your Device</h2>
+                <p class="step-desc" style="font-size: 13px;">Plug in your ESP32-C3 and click the button to pair.</p>
+                
+                <div class="horizontal-flow" style="margin-top: 4px;">
+                  <div class="status-indicator">
+                    <div class="status-dot disconnected" id="status-dot"></div>
+                    <span id="status-text" style="font-size: 13px;">No device connected</span>
+                  </div>
+                  
+                  <div class="chip-info-summary" id="chip-info-summary" style="display: none; margin: 0;">
+                    <span class="info-label" style="font-size: 11px;">Detected:</span>
+                    <span class="project-chip chip-active" id="chip-badge-step2" style="padding: 2px 8px; font-size: 11px;">ESP32-C3</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-card-footer">
+            <button class="btn btn-outline" onclick="goToStep(1)">← Back</button>
+            <button class="btn btn-primary" id="btn-connect" onclick="handleConnect()">Connect Device</button>
+            <button class="btn btn-primary" id="btn-step-2-next" onclick="goToStep(3)" style="display: none;">Next →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 3: Flash Firmware -->
+      <section id="step-3" class="step-section">
+        <div class="card main-step-card">
+          <div class="step-card-body">
+            <div class="compact-grid">
+              <!-- Left: Info -->
+              <div class="compact-item-group">
+                <div class="info-item">
+                  <label>Firmware</label>
+                  <div class="value" id="confirm-project-name" style="font-size: 14px;">DeskBuddy</div>
+                </div>
+                <div class="info-item" style="margin-top: 8px;">
+                  <label>Baud Rate</label>
+                  <div class="select-wrapper mini">
+                    <select id="baud-select">
+                      <option value="921600">921,600</option>
+                      <option value="460800">460,800</option>
+                      <option value="115200">115,200</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: Actions -->
+              <div class="flash-actions-panel">
+                <button class="btn btn-primary btn-full" id="btn-flash" onclick="handleFlash()" style="padding: 10px;">
+                  ⚡ Flash Now
+                </button>
+                <div class="secondary-actions" style="margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                  <button class="btn btn-outline btn-small" id="btn-erase" onclick="handleErase()" style="padding: 6px; font-size: 12px;">Erase</button>
+                  <button class="btn btn-outline btn-small" id="btn-reset" onclick="handleReset()" style="padding: 6px; font-size: 12px;">Reset</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Progress (Hidden by default) -->
+            <div class="progress-section" id="progress-section" style="display: none; margin-top: 16px;">
+              <div class="progress-info" style="margin-bottom: 6px;">
+                <span class="progress-label" id="progress-label" style="font-size: 12px;">Preparing…</span>
+                <span class="progress-pct" id="progress-pct" style="font-size: 12px;">0%</span>
+              </div>
+              <div class="progress-track" style="height: 6px;">
+                <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+              </div>
+            </div>
+            
+          </div>
+
+          <div class="step-card-footer">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <button class="btn btn-outline" id="btn-flash-back" onclick="goToStep(2)">← Back</button>
+              <button class="btn btn-danger" id="btn-cancel" onclick="handleCancel()" style="display: none; padding: 0 24px;">Stop Flashing</button>
+              <div id="flash-done-actions" style="display: none; align-items: center; gap: 12px;">
+                <span class="step-desc" style="font-size: 13px; margin: 0;">Ready! You can now reset or disconnect.</span>
+                <button class="btn btn-primary" onclick="location.reload()">Finish</button>
+              </div>
+            </div>
+            <div class="footer-status-text">Baud rate: <span id="current-baud-display">921,600</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Log Section (Always visible at the bottom) -->
+      <div class="log-section">
+        <div class="card log-card">
+          <div class="console-toolbar">
+            <div class="log-title-group">
+              <div class="dot-indicator green"></div>
+              <div class="card-title">Flash Log</div>
+              <span class="log-badge" id="log-count-badge">0 lines</span>
+            </div>
+            <div class="log-actions">
+              <button onclick="clearLog()" class="btn-text">Clear</button>
+              <button id="btn-toggle-log" onclick="toggleLog()" class="btn-text">▲ Hide</button>
+            </div>
+          </div>
+          <div id="log-console-container">
+            <div id="log-console" class="log-console"></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Load Main App Logic -->
+  <script type="module" src="app.js?v=3"></script>
+
+</body>
+
+</html>

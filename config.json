@@ -1,0 +1,25 @@
+{
+  "projects": [
+    {
+      "id": "LiteWing",
+      "name": "LiteWing",
+      "chip": "ESP32S3",
+      "version": "3.0.0",
+      "description": "LiteWing version 3.0",
+      "baud_options": [
+        115200,
+        460800,
+        921600
+      ],
+      "baud_default": 921600,
+      "flash_size": "8MB",
+      "flash": [
+        {
+          "address": "0x0",
+          "file_id": "LiteWing_3.0.bin",
+          "label": "LiteWing V 3.0"
+        }
+      ]
+    }
+  ]
+}
