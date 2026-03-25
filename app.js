@@ -120,7 +120,13 @@ function renderProjects() {
     `<option value="${p.id}">${p.name} (v${p.version || '—'}) [${p.chip}]</option>`
   ).join('');
 
-  select.innerHTML = '<option value="" disabled selected>— Choose a firmware —</option>' + options;
+  <!-- select.innerHTML = '<option value="" disabled selected>— Choose a firmware —</option>' + options; -->
+    select.innerHTML = options;
+  
+  // Auto-select the first project
+  const firstProject = STATE.config.projects[0];
+  select.value = firstProject.id;
+  window.selectProject(firstProject.id);
 }
 
 window.selectProject = function (id) {
