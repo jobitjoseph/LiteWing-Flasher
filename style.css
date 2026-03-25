@@ -61,7 +61,7 @@ body {
 .container {
   max-width: 900px;
   margin: 0 auto;
-  padding: 0px px 0px; /* Increased top padding */
+  padding: 5px 1px 5px; /* Increased top padding */
 }
 
 /* ─── Stepper ─────────────────────────────────────── */
